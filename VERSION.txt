@@ -1,4 +1,9 @@
-jetty-9.2.22-SNAPSHOT
+jetty-9.2.22.v20170531 - 31 May 2017
+ + 920 no main manifest attribute, in jetty-runner-<ver>.jar
+ + 1108 Please improve logging in SslContextFactory when there are no approved
+   cipher suites
+ + 1523 Update ALPN support for Java 8u131
+ + 1556 A timing channel in Password.java
 
 jetty-9.2.21.v20170120 - 20 January 2017
  + 592 Support no-value Host header in HttpParser
