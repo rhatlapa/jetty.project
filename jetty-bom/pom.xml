@@ -55,6 +55,35 @@
   </distributionManagement>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.jetty.toolchain</groupId>
+        <artifactId>bom-maven-plugin</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <id>generate-bom</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>org.eclipse.jetty*</include>
+                </includes>
+                <excludes>
+                  <exclude>org.eclipse.jetty.orbit*:*</exclude>
+                  <exclude>org.eclipse.jetty.toolchain*:*</exclude>
+                  <exclude>*:test-*</exclude>
+                  <exclude>*:*-test</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
