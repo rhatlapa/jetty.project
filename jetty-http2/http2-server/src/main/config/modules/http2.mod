@@ -20,7 +20,14 @@ etc/jetty-http2.xml
 
 [ini-template]
 ## Max number of concurrent streams per connection
-# jetty.http2.maxConcurrentStreams=1024
+# jetty.http2.maxConcurrentStreams=128
 
 ## Initial stream receive window (client to server)
-# jetty.http2.initialStreamRecvWindow=65535
+# jetty.http2.initialStreamRecvWindow=524288
+
+## Initial session receive window (client to server)
+# jetty.http2.initialSessionRecvWindow=1048576
+
+## Preallocated producer threads (-1 uses the number of CPUs, 0 disables EatWhatYouKill scheduling)
+# jetty.http.preallocatedProducers=1
+

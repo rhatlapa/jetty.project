@@ -49,10 +49,14 @@ public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
         this(executor,1);
     }
 
+    /**
+     * @param executor The executor to use to obtain threads
+     * @param capacity The number of threads to preallocate. If <0 then the number of available processors is used.
+     */
     public PreallocatedExecutor(Executor executor,int capacity)
     {
         _executor = executor;
-        _queue = new Preallocated[capacity];
+        _queue = new Preallocated[capacity>=0?capacity:Runtime.getRuntime().availableProcessors()];
     }
 
     public Executor getExecutor()
@@ -158,6 +162,12 @@ public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
     {
         Condition _wakeup = null;
         Runnable _task = null;
+        
+        private void preallocatedWait() throws InterruptedException
+        {
+            _wakeup.await();
+        }
+        
         @Override
         public void run()
         {
@@ -186,7 +196,7 @@ public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
                     {
                         try
                         {
-                            _wakeup.await();
+                            preallocatedWait();
                             task = _task;
                             _task = null;
                         }

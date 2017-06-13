@@ -40,5 +40,11 @@ etc/jetty-http.xml
 ## Thread priority delta to give to acceptor threads
 # jetty.http.acceptorPriorityDelta=0
 
+## Preallocated producer threads (-1 uses the number of CPUs, 0 disables EatWhatYouKill scheduling)
+# jetty.http.preallocatedProducers=-1
+
+## Connect Timeout in milliseconds
+# jetty.http.connectTimeout=15000
+
 ## HTTP Compliance: RFC7230, RFC2616, LEGACY
 # jetty.http.compliance=RFC7230

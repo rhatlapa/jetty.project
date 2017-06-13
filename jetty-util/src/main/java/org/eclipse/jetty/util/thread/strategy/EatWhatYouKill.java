@@ -85,7 +85,6 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
         _executor = executor;
         _producers = producers;
         addBean(_producer);
-        addBean(_executor,false);
     }
 
     @Override
