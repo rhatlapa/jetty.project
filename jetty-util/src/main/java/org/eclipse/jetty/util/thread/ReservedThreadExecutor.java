@@ -27,15 +27,15 @@ import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 
 /**
- * An Executor using preallocated Threads from a wrapped Executor.
- * <p>Calls to {@link #execute(Runnable)} on a {@link PreallocatedExecutor} will either succeed
+ * An Executor using preallocated/reserved Threads from a wrapped Executor.
+ * <p>Calls to {@link #execute(Runnable)} on a {@link ReservedThreadExecutor} will either succeed
  * with a Thread immediately being assigned the Runnable task, or fail if no Thread is
  * available. Threads are preallocated up to the capacity from a wrapped {@link Executor}.
  *
  */
-public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
+public class ReservedThreadExecutor extends AbstractLifeCycle implements Executor
 {
-    private static final Logger LOG = Log.getLogger(PreallocatedExecutor.class);
+    private static final Logger LOG = Log.getLogger(ReservedThreadExecutor.class);
     
     private final Executor _executor;
     private final Locker _locker = new Locker();
@@ -44,7 +44,7 @@ public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
     private int _size;
     private int _pending;
     
-    public PreallocatedExecutor(Executor executor)
+    public ReservedThreadExecutor(Executor executor)
     {
         this(executor,1);
     }
@@ -53,7 +53,7 @@ public class PreallocatedExecutor extends AbstractLifeCycle implements Executor
      * @param executor The executor to use to obtain threads
      * @param capacity The number of threads to preallocate. If <0 then the number of available processors is used.
      */
-    public PreallocatedExecutor(Executor executor,int capacity)
+    public ReservedThreadExecutor(Executor executor,int capacity)
     {
         _executor = executor;
         _queue = new Preallocated[capacity>=0?capacity:Runtime.getRuntime().availableProcessors()];

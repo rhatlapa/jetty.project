@@ -18,7 +18,9 @@
 
 package org.eclipse.jetty.util.thread.strategy;
 
+import java.io.Closeable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.eclipse.jetty.util.component.ContainerLifeCycle;
 import org.eclipse.jetty.util.log.Log;
@@ -28,7 +30,7 @@ import org.eclipse.jetty.util.thread.Invocable;
 import org.eclipse.jetty.util.thread.Invocable.InvocationType;
 import org.eclipse.jetty.util.thread.Locker;
 import org.eclipse.jetty.util.thread.Locker.Lock;
-import org.eclipse.jetty.util.thread.PreallocatedExecutor;
+import org.eclipse.jetty.util.thread.ReservedThreadExecutor;
 
 /**
  * <p>A strategy where the thread that produces will run the resulting task if it 
@@ -67,19 +69,19 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
     private final Runnable _runProduce = new RunProduce();
     private final Producer _producer;
     private final Executor _executor;
-    private final PreallocatedExecutor _producers;
+    private final ReservedThreadExecutor _producers;
 
     public EatWhatYouKill(Producer producer, Executor executor)
     {
-        this(producer,executor,new PreallocatedExecutor(executor,1));
+        this(producer,executor,new ReservedThreadExecutor(executor,1));
     }
 
     public EatWhatYouKill(Producer producer, Executor executor, int maxProducersPending )
     {
-        this(producer,executor,new PreallocatedExecutor(executor,maxProducersPending));
+        this(producer,executor,new ReservedThreadExecutor(executor,maxProducersPending));
     }
         
-    public EatWhatYouKill(Producer producer, Executor executor, PreallocatedExecutor producers )
+    public EatWhatYouKill(Producer producer, Executor executor, ReservedThreadExecutor producers )
     {
         _producer = producer;
         _executor = executor;
@@ -90,27 +92,27 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
     @Override
     public void dispatch()
     {
-        boolean dispatch = false;
+        boolean execute = false;
         try (Lock locked = _locker.lock())
         {
             switch(_state)
             {
                 case IDLE:
-                    dispatch = true;
+                    execute = true;
                     break;
                     
                 case PRODUCING:
                     _state = State.REPRODUCING;
-                    dispatch = false;
+                    execute = false;
                     break;
                     
                 default:     
-                    dispatch = false;   
+                    execute = false;   
             }
         }
         if (LOG.isDebugEnabled())
-            LOG.debug("{} dispatch {}", this, dispatch);
-        if (dispatch)
+            LOG.debug("{} dispatch {}", this, execute);
+        if (execute)
             _executor.execute(_runProduce);
     }
 
@@ -154,7 +156,7 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
             {
                 task = _producer.produce();
             }
-            catch(Exception e)
+            catch(Throwable e)
             {
                 LOG.warn(e);
             }
@@ -216,7 +218,22 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
                     else
                         _executor.execute(task);
                 }
-                catch(Exception e)
+                catch(RejectedExecutionException e)
+                {
+                    LOG.warn(e);
+                    if (task instanceof Closeable)
+                    {
+                        try
+                        {
+                            ((Closeable)task).close();
+                        }
+                        catch(Throwable e2)
+                        {
+                            LOG.ignore(e2);
+                        }
+                    }
+                }
+                catch(Throwable e)
                 {
                     LOG.warn(e);
                 }

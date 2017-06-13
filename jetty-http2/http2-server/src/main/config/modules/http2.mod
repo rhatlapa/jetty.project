@@ -28,6 +28,6 @@ etc/jetty-http2.xml
 ## Initial session receive window (client to server)
 # jetty.http2.initialSessionRecvWindow=1048576
 
-## Preallocated producer threads (-1 uses the number of CPUs, 0 disables EatWhatYouKill scheduling)
-# jetty.http.preallocatedProducers=1
+## Reserve threads for high priority tasks (-1 use number of Selectors, 0 no reserved threads)
+# jetty.http2.reservedThreads=-1
 

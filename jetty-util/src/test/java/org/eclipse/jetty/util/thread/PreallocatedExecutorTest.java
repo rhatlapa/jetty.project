@@ -39,13 +39,13 @@ public class PreallocatedExecutorTest
 {
     final static int SIZE = 2;
     TestExecutor _executor;
-    PreallocatedExecutor _pae;
+    ReservedThreadExecutor _pae;
         
     @Before
     public void before() throws Exception
     {
         _executor = new TestExecutor();
-        _pae = new PreallocatedExecutor(_executor,SIZE);
+        _pae = new ReservedThreadExecutor(_executor,SIZE);
         _pae.start();
     }
     

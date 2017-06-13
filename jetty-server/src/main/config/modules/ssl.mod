@@ -45,7 +45,7 @@ basehome:modules/ssl/keystore|etc/keystore
 # jetty.ssl.acceptorPriorityDelta=0
 
 ## Preallocated producer threads (0 disables EatWhatYouKill scheduling)
-# jetty.ssl.preallocatedProducers=-1
+# jetty.ssl.reservedThreads=-1
 
 ## Connect Timeout in milliseconds
 # jetty.ssl.connectTimeout=15000

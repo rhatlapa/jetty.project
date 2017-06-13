@@ -46,7 +46,7 @@ import org.eclipse.jetty.util.thread.ExecutionStrategy;
 import org.eclipse.jetty.util.thread.Invocable;
 import org.eclipse.jetty.util.thread.Invocable.InvocationType;
 import org.eclipse.jetty.util.thread.Locker;
-import org.eclipse.jetty.util.thread.PreallocatedExecutor;
+import org.eclipse.jetty.util.thread.ReservedThreadExecutor;
 import org.eclipse.jetty.util.thread.Scheduler;
 import org.eclipse.jetty.util.thread.strategy.EatWhatYouKill;
 
@@ -74,7 +74,7 @@ public class ManagedSelector extends ContainerLifeCycle implements Dumpable
         _id = id;
         SelectorProducer producer = new SelectorProducer();
         Executor executor = selectorManager.getExecutor();
-        _strategy = new EatWhatYouKill(producer,executor,_selectorManager.getBean(PreallocatedExecutor.class));            
+        _strategy = new EatWhatYouKill(producer,executor,_selectorManager.getBean(ReservedThreadExecutor.class));            
         addBean(_strategy,true);
         setStopTimeout(5000);
     }

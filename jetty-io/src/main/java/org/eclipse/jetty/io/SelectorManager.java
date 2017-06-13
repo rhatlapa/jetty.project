@@ -35,7 +35,7 @@ import org.eclipse.jetty.util.component.ContainerLifeCycle;
 import org.eclipse.jetty.util.component.Dumpable;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
-import org.eclipse.jetty.util.thread.PreallocatedExecutor;
+import org.eclipse.jetty.util.thread.ReservedThreadExecutor;
 import org.eclipse.jetty.util.thread.Scheduler;
 import org.eclipse.jetty.util.thread.strategy.EatWhatYouKill;
 
@@ -57,7 +57,7 @@ public abstract class SelectorManager extends ContainerLifeCycle implements Dump
     private final ManagedSelector[] _selectors;
     private long _connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     private long _selectorIndex;
-    private int _preallocatedProducers = -1;
+    private int _reservedThreads = -2;
 
     protected SelectorManager(Executor executor, Scheduler scheduler)
     {
@@ -109,25 +109,25 @@ public abstract class SelectorManager extends ContainerLifeCycle implements Dump
     /**
      * Get the number of preallocated producing threads
      * @see EatWhatYouKill
-     * @see PreallocatedExecutor
+     * @see ReservedThreadExecutor
      * @return The number of threads preallocated to producing (default 1).
      */
     @ManagedAttribute("The number of preallocated producer threads")
-    public int getPreallocatedProducers()
+    public int getReservedThreads()
     {
-        return _preallocatedProducers;
+        return _reservedThreads;
     }
     
     /**
-     * Set the number of preallocated producing threads
+     * Set the number of preallocated threads for high priority tasks
      * @see EatWhatYouKill
-     * @see PreallocatedExecutor
-     * @param producers  The number of producing threads to preallocate (default 1). 
+     * @see ReservedThreadExecutor
+     * @param threads  The number of producing threads to preallocate (default 1). 
      * The EatWhatYouKill scheduler will be disabled with a value of 0.
      */
-    public void setPreallocatedProducers(int producers)
+    public void setReservedThreads(int threads)
     {
-        _preallocatedProducers = producers;
+        _reservedThreads = threads;
     }
     
     /**
@@ -265,7 +265,7 @@ public abstract class SelectorManager extends ContainerLifeCycle implements Dump
     @Override
     protected void doStart() throws Exception
     {
-        addBean(new PreallocatedExecutor(getExecutor(),_preallocatedProducers),true);
+        addBean(new ReservedThreadExecutor(getExecutor(),_reservedThreads==-2?_selectors.length:_reservedThreads),true);
         for (int i = 0; i < _selectors.length; i++)
         {
             ManagedSelector selector = newSelector(i);

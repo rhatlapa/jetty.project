@@ -39,7 +39,7 @@ import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.eclipse.jetty.util.thread.PreallocatedExecutor;
+import org.eclipse.jetty.util.thread.ReservedThreadExecutor;
 import org.eclipse.jetty.util.thread.Scheduler;
 
 public class HTTP2ClientConnectionFactory implements ClientConnectionFactory
@@ -60,6 +60,7 @@ public class HTTP2ClientConnectionFactory implements ClientConnectionFactory
         HTTP2Client client = (HTTP2Client)context.get(CLIENT_CONTEXT_KEY);
         ByteBufferPool byteBufferPool = (ByteBufferPool)context.get(BYTE_BUFFER_POOL_CONTEXT_KEY);
         Executor executor = (Executor)context.get(EXECUTOR_CONTEXT_KEY);
+        ReservedThreadExecutor preallocatedExecutor = (ReservedThreadExecutor)context.get(PREALLOCATED_EXECUTOR_CONTEXT_KEY);
         Scheduler scheduler = (Scheduler)context.get(SCHEDULER_CONTEXT_KEY);
         Session.Listener listener = (Session.Listener)context.get(SESSION_LISTENER_CONTEXT_KEY);
         @SuppressWarnings("unchecked")
@@ -69,22 +70,30 @@ public class HTTP2ClientConnectionFactory implements ClientConnectionFactory
         FlowControlStrategy flowControl = client.getFlowControlStrategyFactory().newFlowControlStrategy();
         HTTP2ClientSession session = new HTTP2ClientSession(scheduler, endPoint, generator, listener, flowControl);
         Parser parser = new Parser(byteBufferPool, session, 4096, 8192);
-        
-        PreallocatedExecutor preallocatedExecutor = (PreallocatedExecutor)context.get(PREALLOCATED_EXECUTOR_CONTEXT_KEY);
-        if (preallocatedExecutor==null)
-            preallocatedExecutor=client.getBean(PreallocatedExecutor.class);
+
         if (preallocatedExecutor==null)
         {
-            try
+            // TODO move this to non lazy construction
+            preallocatedExecutor=client.getBean(ReservedThreadExecutor.class);
+            if (preallocatedExecutor==null)
             {
-                preallocatedExecutor = new PreallocatedExecutor(executor,1); // TODO configure size
-                preallocatedExecutor.start();
-                client.addBean(preallocatedExecutor,true);
+                synchronized (this)
+                {
+                    if (preallocatedExecutor==null)
+                    {
+                        try
+                        {
+                            preallocatedExecutor = new ReservedThreadExecutor(executor,1); // TODO configure size
+                            preallocatedExecutor.start();
+                            client.addBean(preallocatedExecutor,true);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        } 
+                    }
+                }
             }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            } 
         }
         
         HTTP2ClientConnection connection = new HTTP2ClientConnection(client, byteBufferPool, preallocatedExecutor, endPoint,
@@ -99,7 +108,7 @@ public class HTTP2ClientConnectionFactory implements ClientConnectionFactory
         private final Promise<Session> promise;
         private final Session.Listener listener;
 
-        private HTTP2ClientConnection(HTTP2Client client, ByteBufferPool byteBufferPool, PreallocatedExecutor executor, EndPoint endpoint, Parser parser, ISession session, int bufferSize, Promise<Session> promise, Session.Listener listener)
+        private HTTP2ClientConnection(HTTP2Client client, ByteBufferPool byteBufferPool, ReservedThreadExecutor executor, EndPoint endpoint, Parser parser, ISession session, int bufferSize, Promise<Session> promise, Session.Listener listener)
         {
             super(byteBufferPool, executor, endpoint, parser, session, bufferSize);
             this.client = client;
