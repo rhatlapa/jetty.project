@@ -27,7 +27,7 @@ import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 
 /**
- * An Executor using preallocated Threads.
+ * An Executor using preallocated Threads from a wrapped Executor.
  * <p>Calls to {@link #execute(Runnable)} on a {@link PreallocatedExecutor} will either succeed
  * with a Thread immediately being assigned the Runnable task, or fail if no Thread is
  * available. Threads are preallocated up to the capacity from a wrapped {@link Executor}.
