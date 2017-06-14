@@ -132,14 +132,26 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
 
     public boolean tryProduce()
     {
-        boolean producing = false; 
+        boolean producing; 
         try (Lock locked = _locker.lock())
         {
-            // Enter PRODUCING
-            if (_state==State.IDLE)
+            switch (_state)
             {
-                _state = State.PRODUCING;
-                producing = true; 
+                case IDLE:
+                    // Enter PRODUCING
+                    _state = State.PRODUCING;
+                    producing = true;
+                    break;
+                    
+                case PRODUCING:
+                    // Keep other Thread producing
+                    _state = State.REPRODUCING;
+                    producing = false;
+                    break;
+                    
+                default:
+                    producing = false;
+                    break;
             }
         }
         return producing;
