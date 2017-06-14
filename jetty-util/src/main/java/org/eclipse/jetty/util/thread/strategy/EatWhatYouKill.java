@@ -127,10 +127,12 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
     @Override
     public void produce()
     {
-        while(isRunning() && tryProduce() && doProduce());
+        boolean reproduce = true;
+        while(isRunning() && tryProduce(reproduce) && doProduce())
+            reproduce = false;
     }
 
-    public boolean tryProduce()
+    public boolean tryProduce(boolean reproduce)
     {
         boolean producing; 
         try (Lock locked = _locker.lock())
@@ -145,7 +147,8 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
                     
                 case PRODUCING:
                     // Keep other Thread producing
-                    _state = State.REPRODUCING;
+                    if (reproduce)
+                        _state = State.REPRODUCING;
                     producing = false;
                     break;
                     
