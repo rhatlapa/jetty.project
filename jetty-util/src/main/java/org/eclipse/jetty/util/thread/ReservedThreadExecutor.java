@@ -31,7 +31,6 @@ import org.eclipse.jetty.util.log.Logger;
  * <p>Calls to {@link #execute(Runnable)} on a {@link ReservedThreadExecutor} will either succeed
  * with a Thread immediately being assigned the Runnable task, or fail if no Thread is
  * available. Threads are preallocated up to the capacity from a wrapped {@link Executor}.
- *
  */
 public class ReservedThreadExecutor extends AbstractLifeCycle implements Executor
 {
@@ -39,7 +38,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
     
     private final Executor _executor;
     private final Locker _locker = new Locker();
-    private final Preallocated[] _queue;
+    private final ReservedThread[] _queue;
     private int _head;
     private int _size;
     private int _pending;
@@ -56,7 +55,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
     public ReservedThreadExecutor(Executor executor,int capacity)
     {
         _executor = executor;
-        _queue = new Preallocated[capacity>=0?capacity:Runtime.getRuntime().availableProcessors()];
+        _queue = new ReservedThread[capacity>=0?capacity:Runtime.getRuntime().availableProcessors()];
     }
 
     public Executor getExecutor()
@@ -85,7 +84,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
             _head = _size = _pending = 0;
             while (_pending<_queue.length)
             {
-                _executor.execute(new Preallocated());
+                _executor.execute(new ReservedThread());
                 _pending++;
             }
         }
@@ -98,7 +97,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
         {
             while (_size>0)
             {
-                Preallocated thread = _queue[_head];
+                ReservedThread thread = _queue[_head];
                 _queue[_head] = null;
                 _head = (_head+1)%_queue.length;
                 _size--;
@@ -116,7 +115,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
     
     /**
      * @param task The task to run
-     * @return True iff a preallocated thread was available and has been assigned the task to run.
+     * @return True iff a reserved thread was available and has been assigned the task to run.
      */
     public boolean tryExecute(Runnable task)
     {
@@ -129,20 +128,20 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
             {
                 if (_pending<_queue.length)
                 {
-                    _executor.execute(new Preallocated());
+                    _executor.execute(new ReservedThread());
                     _pending++;
                 }
                 return false;
             }
             
-            Preallocated thread = _queue[_head];
+            ReservedThread thread = _queue[_head];
             _queue[_head] = null;
             _head = (_head+1)%_queue.length;
             _size--;
             
             if (_size==0 && _pending<_queue.length)
             {
-                _executor.execute(new Preallocated());
+                _executor.execute(new ReservedThread());
                 _pending++;
             }
             
@@ -158,12 +157,12 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
         }
     }
 
-    private class Preallocated implements Runnable
+    private class ReservedThread implements Runnable
     {
-        Condition _wakeup = null;
-        Runnable _task = null;
+        private Condition _wakeup = null;
+        private Runnable _task = null;
         
-        private void preallocatedWait() throws InterruptedException
+        private void reservedWait() throws InterruptedException
         {
             _wakeup.await();
         }
@@ -196,7 +195,7 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
                     {
                         try
                         {
-                            preallocatedWait();
+                            reservedWait();
                             task = _task;
                             _task = null;
                         }
@@ -233,5 +232,4 @@ public class ReservedThreadExecutor extends AbstractLifeCycle implements Executo
             return String.format("%s{s=%d,p=%d}",super.toString(),_size,_pending);
         }
     }
-
 }

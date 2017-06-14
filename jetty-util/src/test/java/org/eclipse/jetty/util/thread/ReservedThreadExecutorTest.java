@@ -18,24 +18,20 @@
 
 package org.eclipse.jetty.util.thread;
 
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
-public class PreallocatedExecutorTest
+public class ReservedThreadExecutorTest
 {
     final static int SIZE = 2;
     TestExecutor _executor;

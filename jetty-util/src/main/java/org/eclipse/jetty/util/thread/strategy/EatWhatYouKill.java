@@ -62,7 +62,7 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
 {
     private static final Logger LOG = Log.getLogger(EatWhatYouKill.class);
 
-    enum State { IDLE, PRODUCING, REPRODUCING };
+    private enum State { IDLE, PRODUCING, REPRODUCING }
     
     private final Locker _locker = new Locker();
     private State _state = State.IDLE;
@@ -76,12 +76,12 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
         this(producer,executor,new ReservedThreadExecutor(executor,1));
     }
 
-    public EatWhatYouKill(Producer producer, Executor executor, int maxProducersPending )
+    public EatWhatYouKill(Producer producer, Executor executor, int maxProducersPending)
     {
         this(producer,executor,new ReservedThreadExecutor(executor,maxProducersPending));
     }
         
-    public EatWhatYouKill(Producer producer, Executor executor, ReservedThreadExecutor producers )
+    public EatWhatYouKill(Producer producer, Executor executor, ReservedThreadExecutor producers)
     {
         _producer = producer;
         _executor = executor;
@@ -103,11 +103,10 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
                     
                 case PRODUCING:
                     _state = State.REPRODUCING;
-                    execute = false;
                     break;
                     
-                default:     
-                    execute = false;   
+                default:
+                    break;
             }
         }
         if (LOG.isDebugEnabled())
@@ -134,7 +133,7 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
 
     public boolean tryProduce(boolean reproduce)
     {
-        boolean producing; 
+        boolean producing = false;
         try (Lock locked = _locker.lock())
         {
             switch (_state)
@@ -149,11 +148,9 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
                     // Keep other Thread producing
                     if (reproduce)
                         _state = State.REPRODUCING;
-                    producing = false;
                     break;
                     
                 default:
-                    producing = false;
                     break;
             }
         }
@@ -189,7 +186,7 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
                     else
                     {
                         if (LOG.isDebugEnabled())
-                            LOG.debug("{} IDLE",this.toStringLocked());
+                            LOG.debug("{} IDLE",toStringLocked());
                         _state = State.IDLE;
                         producing = false;
                     }
@@ -268,13 +265,10 @@ public class EatWhatYouKill extends ContainerLifeCycle implements ExecutionStrat
 
     public String toString()
     {
-        StringBuilder builder = new StringBuilder();
-        getString(builder);
         try (Lock locked = _locker.lock())
         {
-            getState(builder);
+            return toStringLocked();
         }
-        return builder.toString();
     }
 
     public String toStringLocked()
